@@ -6,6 +6,8 @@ var flash = require('connect-flash');
 var config = require('config-lite');
 var routes = require('./routes');
 var pkg = require('./package');
+var winston = require('winston');
+var expressWinston = require('express-winston');
 
 var app = express();
 
@@ -46,8 +48,52 @@ app.use(function (req, res, next) {
   next();
 });
 
+// 404 page
+app.use(function (req, res) {
+  if (!res.headersSent) {
+    res.status(404).render('404');
+  }
+});
+
+// 处理表单及文件上传的中间件
+app.use(require('express-formidable')({
+  uploadDir: path.join(__dirname, 'public/img'),// 上传文件目录
+  keepExtensions: true// 保留后缀
+}));
+
+// 正常请求的日志
+app.use(expressWinston.logger({
+  transports: [
+    new (winston.transports.Console)({
+      json: true,
+      colorize: true
+    }),
+    new winston.transports.File({
+      filename: 'logs/success.log'
+    })
+  ]
+}));
 // 路由
 routes(app);
+// 错误请求的日志
+app.use(expressWinston.errorLogger({
+  transports: [
+    new winston.transports.Console({
+      json: true,
+      colorize: true
+    }),
+    new winston.transports.File({
+      filename: 'logs/error.log'
+    })
+  ]
+}));
+
+// error page
+app.use(function (err, req, res, next) {
+  res.render('error', {
+    error: err
+  });
+});
 
 // 监听端口，启动程序
 app.listen(config.port, function () {
