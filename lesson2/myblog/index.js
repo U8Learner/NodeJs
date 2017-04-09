@@ -49,11 +49,11 @@ app.use(function (req, res, next) {
 });
 
 // 404 page
-app.use(function (req, res) {
+/*app.use(function (req, res) {
   if (!res.headersSent) {
     res.status(404).render('404');
   }
-});
+});*/
 
 // 处理表单及文件上传的中间件
 app.use(require('express-formidable')({
@@ -95,7 +95,11 @@ app.use(function (err, req, res, next) {
   });
 });
 
-// 监听端口，启动程序
-app.listen(config.port, function () {
-  console.log(`${pkg.name} listening on port ${config.port}`);
-});
+if (module.parent) {
+  module.exports = app;
+} else {
+  // 监听端口，启动程序
+  app.listen(config.port, function () {
+    console.log(`${pkg.name} listening on port ${config.port}`);
+  });
+}
